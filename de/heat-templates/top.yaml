@@ -34,6 +34,10 @@ parameters:
     type: number
     description: Number of gtw workers to deploy
     default: 0
+  osd_size:
+    type: number
+    description: Number of gtw workers to deploy
+    default: 0
   ucp_boot_timeout:
     type: number
     description: Boot timeout for UCP instance
@@ -50,6 +54,8 @@ parameters:
   gtw_metadata:
     type: json
   lma_metadata:
+    type: json
+  osd_metadata:
     type: json
 
 resources:
@@ -207,6 +213,26 @@ resources:
           node_type: "worker"
           ucp_master_host: { get_attr: [ucp, server_private_ip] }
 
+  osds:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+     - ucp
+    properties:
+      count: { get_param: osd_size }
+      resource_def:
+        type: ./srv-group.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: "OS::stack_name" }
+          public_net_id: { get_param: public_net_id }
+          private_net_id: { get_resource: network }
+          private_subnet_id: { get_resource: subnet }
+          private_floating_network: { get_resource: private_floating_network }
+          metadata: { get_param: osd_metadata}
+          node_type: "worker"
+          ucp_master_host: { get_attr: [ucp, server_private_ip] }
+
 outputs:
   ucp_ips:
     description: Private IP addresses of the deployed ucp instances
@@ -226,6 +252,9 @@ outputs:
   lmas_ips:
     description: Private IP addresses of the deployed lma instances
     value: { get_attr: [lmas, server_public_ip] }
+  osds_ips:
+    description: Private IP addresses of the deployed osd instances
+    value: { get_attr: [osds, server_public_ip] }
   worker_private_floating_ips:
     description: IPs might be used as gateway
     value: { get_attr: [workers, server_private_floating_ip] }
