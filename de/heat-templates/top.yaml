@@ -49,6 +49,8 @@ parameters:
     type: json
   gtw_metadata:
     type: json
+  lma_metadata:
+    type: json
 
 resources:
   key_pair:
