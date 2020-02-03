@@ -1,0 +1,205 @@
+heat_template_version: queens
+
+parameters:
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  image:
+    type: string
+    description: Name of image to use for servers
+  flavor:
+    type: string
+    description: Flavor to use for servers
+  public_net_id:
+    type: string
+    description: >
+      ID of public network for which floating IP addresses will be allocated
+  masters_size:
+    type: number
+    description: Number of masters instances to deploy
+    default: 2
+  worker_size:
+    type: number
+    description: Number of workers to deploy
+    default: 5
+  cmp_size:
+    type: number
+    description: Number of cmp workers to deploy
+    default: 0
+  gtw_size:
+    type: number
+    description: Number of gtw workers to deploy
+    default: 0
+  ucp_boot_timeout:
+    type: number
+    description: Boot timeout for UCP instance
+    default: 1200
+  cluster_public_key:
+    type: string
+  private_floating_network_cidr:
+    type: string
+    default: '10.11.12.0/24'
+  worker_metadata:
+    type: json
+  cmp_metadata:
+    type: json
+  gtw_metadata:
+    type: json
+
+resources:
+  key_pair:
+    type: OS::Nova::KeyPair
+    properties:
+      name: { get_param: "OS::stack_name" }
+      public_key: { get_param: cluster_public_key}
+      save_private_key: false
+
+  network:
+    type: OS::Neutron::Net
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: network }
+      cidr: 10.10.0.0/24
+      dns_nameservers:
+        - 172.18.224.6
+        - 172.18.176.6
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net_id }
+  router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  private_floating_network:
+    type: OS::Neutron::Net
+    properties:
+      port_security_enabled: false
+  private_floating_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: private_floating_network }
+      cidr: { get_param: private_floating_network_cidr }
+      enable_dhcp: false
+      gateway_ip: ~
+
+  ucp:
+    depends_on: router_iface
+    type: ./srv-group.yaml
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: "OS::stack_name" }
+      public_net_id: { get_param: public_net_id }
+      private_net_id: { get_resource: network }
+      private_subnet_id: { get_resource: subnet }
+      private_floating_network: { get_resource: private_floating_network }
+      metadata: {"role":"ucp"}
+      node_type: "ucp"
+
+  masters:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+     - ucp
+    properties:
+      count: { get_param: masters_size }
+      resource_def:
+        type: ./srv-group.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: "OS::stack_name" }
+          public_net_id: { get_param: public_net_id }
+          private_net_id: { get_resource: network }
+          private_subnet_id: { get_resource: subnet }
+          private_floating_network: { get_resource: private_floating_network }
+          metadata: {"role":"master"}
+          node_type: "master"
+          ucp_master_host: { get_attr: [ucp, server_private_ip] }
+
+  workers:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+     - ucp
+    properties:
+      count: { get_param: worker_size }
+      resource_def:
+        type: ./srv-group.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: "OS::stack_name" }
+          public_net_id: { get_param: public_net_id }
+          private_net_id: { get_resource: network }
+          private_subnet_id: { get_resource: subnet }
+          private_floating_network: { get_resource: private_floating_network }
+          metadata: { get_param: worker_metadata}
+          node_type: "worker"
+          ucp_master_host: { get_attr: [ucp, server_private_ip] }
+
+  cmps:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+     - ucp
+    properties:
+      count: { get_param: cmp_size }
+      resource_def:
+        type: ./srv-group.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: "OS::stack_name" }
+          public_net_id: { get_param: public_net_id }
+          private_net_id: { get_resource: network }
+          private_subnet_id: { get_resource: subnet }
+          private_floating_network: { get_resource: private_floating_network }
+          metadata: { get_param: cmp_metadata}
+          node_type: "worker"
+          ucp_master_host: { get_attr: [ucp, server_private_ip] }
+
+  gtws:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+     - ucp
+    properties:
+      count: { get_param: gtw_size }
+      resource_def:
+        type: ./srv-group.yaml
+        properties:
+          image: { get_param: image }
+          flavor: { get_param: flavor }
+          key_name: { get_param: "OS::stack_name" }
+          public_net_id: { get_param: public_net_id }
+          private_net_id: { get_resource: network }
+          private_subnet_id: { get_resource: subnet }
+          private_floating_network: { get_resource: private_floating_network }
+          metadata: { get_param: gtw_metadata}
+          node_type: "worker"
+          ucp_master_host: { get_attr: [ucp, server_private_ip] }
+
+
+outputs:
+  ucp_ips:
+    description: Private IP addresses of the deployed ucp instances
+    value: { get_attr: [ucp, server_public_ip] }
+  masters_ips:
+    description: Private IP addresses of the deployed masters instances
+    value: { get_attr: [masters, server_public_ip] }
+  workers_ips:
+    description: Private IP addresses of the deployed worker instances
+    value: { get_attr: [workers, server_public_ip] }
+  cmps_ips:
+    description: Private IP addresses of the deployed cmp instances
+    value: { get_attr: [cmps, server_public_ip] }
+  gtws_ips:
+    description: Private IP addresses of the deployed gtw instances
+    value: { get_attr: [gtws, server_public_ip] }
+  worker_private_floating_ips:
+    description: IPs might be used as gateway
+    value: { get_attr: [workers, server_private_floating_ip] }
+  private_floating_cidr:
+    value: { get_param: private_floating_network_cidr }

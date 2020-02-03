@@ -1,0 +1,99 @@
+heat_template_version: queens
+
+parameters:
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  image:
+    type: string
+    description: Name of image to use for servers
+  flavor:
+    type: string
+    description: Flavor to use for servers
+  public_net_id:
+    type: string
+    description: >
+      ID of public network for which floating IP addresses will be allocated
+  private_net_id:
+    type: string
+    description: ID of private network into which servers get deployed
+  private_subnet_id:
+    type: string
+    description: ID of private subnet
+  private_floating_network:
+    type: string
+    description: ID of network that will be used for floating in nested openstack
+  boot_timeout:
+    type: number
+    description: Boot timeout for instance
+    default: 1200
+  metadata:
+    type: json
+  node_type:
+    type: string
+  ucp_master_host:
+    type: string
+    default: ''
+
+resources:
+
+  software_config:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ./scripts/instance_boot.sh }
+          params:
+            $node_type:  { get_param: node_type }
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $ucp_license_key: { get_file: ./scripts/license.lic }
+            $ucp_master_host: { get_param: ucp_master_host }
+            $node_metadata: { get_param: metadata }
+
+  server:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: nova
+      networks:
+        - port: { get_resource: server_port }
+        - network: { get_param: private_floating_network }
+      user_data_format: RAW
+      user_data: { get_resource: software_config }
+      metadata: { get_param: metadata }
+
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: private_net_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: private_subnet_id }
+
+  server_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_net_id }
+      port_id: { get_resource: server_port }
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: { get_param: boot_timeout }
+
+outputs:
+  server_private_ip:
+    description: IP address of server in private network
+    value: { get_attr: [ server_port, fixed_ips, 0, ip_address] }
+  server_private_floating_ip:
+    description: IP address of server in private floating network
+    value: { get_attr: [server, networks, { get_param: private_floating_network }, 0]}
+  server_public_ip:
+    description: Floating IP address of server in public network
+    value: { get_attr: [ server_floating_ip, floating_ip_address ] }
