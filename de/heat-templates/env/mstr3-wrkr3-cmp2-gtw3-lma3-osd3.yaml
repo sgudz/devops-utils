@@ -11,7 +11,7 @@ parameters:
   osd_size: 3
   ucp_boot_timeout: 1200
   worker_metadata: {"labels": {"openstack-control-plane":"enabled","openvswitch":"enabled"}}
-  cmp_metadata: {"labels": {"openstack-compute-node":"enabled","openvswitch":"enabled", "role":"ceph-osd-node"}}
+  cmp_metadata: {"labels": {"openstack-compute-node":"enabled","openvswitch":"enabled",}}
   gtw_metadata: {"labels": {"openvswitch":"enabled", "gateway": "enabled"}}
   lma_metadata: {"labels": {"role": "stacklight", "stacklight": "enabled"}}
   osd_metadata: {"labels": {"role": "ceph-osd-node"}}
