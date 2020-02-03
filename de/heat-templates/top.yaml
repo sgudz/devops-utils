@@ -30,13 +30,10 @@ parameters:
     type: number
     description: Number of gtw workers to deploy
     default: 0
-<<<<<<< HEAD
   lma_size:
     type: number
     description: Number of gtw workers to deploy
     default: 0
-=======
->>>>>>> 8ce31512123d9d304af8c44dc0c86b150a94984f
   ucp_boot_timeout:
     type: number
     description: Boot timeout for UCP instance
@@ -188,7 +185,6 @@ resources:
           node_type: "worker"
           ucp_master_host: { get_attr: [ucp, server_private_ip] }
 
-<<<<<<< HEAD
   lmas:
     type: OS::Heat::ResourceGroup
     depends_on:
@@ -209,9 +205,6 @@ resources:
           node_type: "worker"
           ucp_master_host: { get_attr: [ucp, server_private_ip] }
 
-=======
->>>>>>> 8ce31512123d9d304af8c44dc0c86b150a94984f
-
 outputs:
   ucp_ips:
     description: Private IP addresses of the deployed ucp instances
@@ -228,12 +221,9 @@ outputs:
   gtws_ips:
     description: Private IP addresses of the deployed gtw instances
     value: { get_attr: [gtws, server_public_ip] }
-<<<<<<< HEAD
   lmas_ips:
     description: Private IP addresses of the deployed lma instances
     value: { get_attr: [lmas, server_public_ip] }
-=======
->>>>>>> 8ce31512123d9d304af8c44dc0c86b150a94984f
   worker_private_floating_ips:
     description: IPs might be used as gateway
     value: { get_attr: [workers, server_private_floating_ip] }
