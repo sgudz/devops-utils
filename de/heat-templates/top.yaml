@@ -49,14 +49,19 @@ parameters:
     default: '10.11.12.0/24'
   worker_metadata:
     type: json
+    default: {}
   cmp_metadata:
     type: json
+    default: {}
   gtw_metadata:
     type: json
+    default: {}
   lma_metadata:
     type: json
+    default: {}
   osd_metadata:
     type: json
+    default: {}
 
 resources:
   key_pair:
