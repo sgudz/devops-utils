@@ -7,9 +7,6 @@ parameters:
   image:
     type: string
     description: Name of image to use for servers
-  flavor:
-    type: string
-    description: Flavor to use for servers
   public_net_id:
     type: string
     description: >
