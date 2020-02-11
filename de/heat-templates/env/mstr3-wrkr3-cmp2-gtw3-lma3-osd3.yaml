@@ -1,7 +1,13 @@
 parameters:
   key_name: devcloud
   image: bionic-server-cloudimg-amd64-20190612
-  flavor: system.compact.openstack.control
+  ucp_flavor: system.compact.openstack.control
+  masters_flavor: system.compact.openstack.control
+  workers_flavor: system.compact.openstack.control
+  cmps_flavor: system.virtual.openstack.compute
+  gtws_flavor: system.compact.openstack.gateway
+  lmas_flavor: system.compact.stacklight.server
+  osds_flavor: system.virtual.ceph.osd
   public_net_id: public
   masters_size: 2
   worker_size: 3

@@ -62,6 +62,27 @@ parameters:
   osd_metadata:
     type: json
     default: {}
+  ucp_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  masters_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  workers_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  cmps_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  gtws_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  lmas_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
+  osds_falvor:
+    type: string
+    default: 'system.compact.openstack.control'
 
 resources:
   key_pair:
@@ -109,7 +130,7 @@ resources:
     type: ./srv-group.yaml
     properties:
       image: { get_param: image }
-      flavor: { get_param: flavor }
+      flavor: { get_param: ucp_flavor }
       key_name: { get_param: "OS::stack_name" }
       public_net_id: { get_param: public_net_id }
       private_net_id: { get_resource: network }
@@ -122,13 +143,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: masters_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: masters_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
@@ -142,13 +164,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: worker_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: workers_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
@@ -162,13 +185,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: cmp_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: cmps_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
@@ -182,13 +206,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: gtw_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: gtws_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
@@ -202,13 +227,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: lma_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: lmas_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
@@ -222,13 +248,14 @@ resources:
     type: OS::Heat::ResourceGroup
     depends_on:
      - ucp
+     - router_iface
     properties:
       count: { get_param: osd_size }
       resource_def:
         type: ./srv-group.yaml
         properties:
           image: { get_param: image }
-          flavor: { get_param: flavor }
+          flavor: { get_param: osds_flavor }
           key_name: { get_param: "OS::stack_name" }
           public_net_id: { get_param: public_net_id }
           private_net_id: { get_resource: network }
