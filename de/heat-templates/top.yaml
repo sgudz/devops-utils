@@ -62,25 +62,25 @@ parameters:
   osd_metadata:
     type: json
     default: {}
-  ucp_falvor:
+  ucp_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  masters_falvor:
+  masters_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  workers_falvor:
+  workers_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  cmps_falvor:
+  cmps_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  gtws_falvor:
+  gtws_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  lmas_falvor:
+  lmas_flavor:
     type: string
     default: 'system.compact.openstack.control'
-  osds_falvor:
+  osds_flavor:
     type: string
     default: 'system.compact.openstack.control'
 
